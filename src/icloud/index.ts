@@ -1,66 +1,112 @@
 import { EventEmitter } from "events";
-import fs from "fs";
+import * as fs from "fs";
+import { promisify } from "util";
 import iCloudSession from "./session";
 
-enum iCloudState {
+const readFileAsync = promisify(fs.readFile);
+
+export enum iCloudState {
 	ready = "ready",
 	error = "err",
-	progress = "progress"
+	twoFactorAuthentication = "twoFactorAuthentication"
 }
 
-export default class iCloud extends EventEmitter {
+export class iCloud extends EventEmitter {
 	// LoggedIn is false because we can't be sure that the session is valid
-	isLoggedIn = false
+	isLoggedIn = false;
 	// enable push initially
-	enablePush = false
-	session: iCloudSession;
-	sessionFile: string = "";
+	enablePush = false;
+	private session: iCloudSession;
+	private _sessionFile?: string;
 
-	constructor(userName: string, password: string, session: iCloudSession | string) {
+	constructor(userName: string = "", password: string = "", session: iCloudSession | null = null) {
 		super();
 		const defaultSession = new iCloudSession(userName, password);
-		if (typeof session === "string") {
-			this.sessionFile = (" " + session).substring(1);
-			fs.readFile(session, "utf8", (err, contents) => {
-				if (!err) this.session = Object.assign(defaultSession, JSON.parse(contents));
-				this.prepare(userName);
-			});
-			this.session = defaultSession;
-		} else {
-			this.session = Object.assign(defaultSession, session);
-			this.prepare(userName);
-		}
+		this.session = Object.assign(defaultSession, session);
 	}
 
-	private prepare(userName: string) {
+	async prepare(userName: string = "", sessionFile: string = "") {
+		this.sessionFile = sessionFile;
+		if (this.sessionFile !== "***") {
+			const contents = await readFileAsync(this.sessionFile, "utf8");
+			this.session = JSON.parse(contents);
+		}
 		// Now, validate the session with checking for important aspects that show that the session can be used to get data (e.g. there need to be a token, some cookies and account info)
 		this.isLoggedIn = this.session.auth.cookies.length > 0
 			&& this.session.auth.token !== null
-			&& Object.keys(this.session.account).length > 0
-			&& (userName.length > 0 ? this.session.username === userName : true)
+			&& Object.keys(this.session.push.account).length > 0
+			&& (userName.length > 0 ? this.userName === userName : true)
 		if (this.isLoggedIn && this.isCookieValid) { // If the session is valid, the client is ready! Emit the 'ready' event of the (self) instance
 			this.session.logins.push(new Date().getTime())
 			this.emit(iCloudState.ready);
 		} else {   // If not, the session is invalid: An error event occurs and username and password arguments will be used for logging in and creating a new session
-			this.emit(iCloudState.error, {
-				error: "Session is expired or invalid",
-				code: 6
-			});
-			// 'progress' event of login is fired because it's an automatic aspect of the algorithm that it tries to login if the session was invalid
-			this.emit(iCloudState.progress, {
-				action: "start",
-				parentAction: "login",
-				progress: 0,
-				message: "Trying to reset session and login"
-			});
+			try {
+				if (this.sessionFile !== "***") {
+					await this.login(this.userName, this.password);
+				} else {
+					this.emit(iCloudState.error, 6, "会话过期或无效");
+				}
+			} catch (e) { // Need login again; 
+				this.emit(iCloudState.error, 6, "会话过期或无效");
+			}
 		}
 	}
 
-	login() {
+	async login(userName: string, password: string) {
+		const authentication = await this.session.getAuthToken(userName, password);
+		this.session.auth.token = authentication.token;
+		this.session.clientSetting.xAppleIDSessionId = authentication.sessionID;
+		this.session.clientSetting.scnt = authentication.scnt;
+		const response = Object.assign({authType: ""}, authentication.response);
+		this.session.twoFactorAuthentication = response.authType === "hsa2";
+		if (this.session.twoFactorAuthenticationIsRequired) { // 需要二步验证
+			this.emit(iCloudState.twoFactorAuthentication, userName, password);
+		} else {
+			await this._sessionUpdate(userName, password);
+		}
+	}
 
+	private async _sessionUpdate(userName: string, password: string) {
+		await this.session.update();
+		this.isLoggedIn = true
+		await this.session.getPushToken();
+		this.userName = userName;
+		this.password = password;
+		this.session.auth.createdDate = new Date();
+		this.session.logins.push(this.session.auth.createdDate.getTime());
+		this.emit(iCloudState.ready);
+	}
+
+	async enterSecureCodeAndLogin(code: string, userName: string, password: string) {
+		await this.session.enterSecurityCode(code);
+		await this._sessionUpdate(userName, password);
+	}
+
+	set password(newValue: string) {
+		this.session.password = newValue;
+	}
+
+	get password(): string {
+		return this.session.password;
+	}
+
+	set userName(newValue: string) {
+		this.session.username = newValue;
+	}
+
+	get userName(): string {
+		return this.session.username;
 	}
 
 	get isCookieValid(): boolean {
 		return this.session.auth.cookiesValidCheck();
+	}
+
+	set sessionFile(newValue: string) {
+		this._sessionFile = fs.existsSync(newValue) ? (" " + newValue).substring(1) : undefined;
+	}
+
+	get sessionFile(): string { // 选择一个无法包含在 path 里面的字符，来标识文件不存在；
+		return this._sessionFile ? this._sessionFile : "***";
 	}
 }

@@ -10,14 +10,14 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:vscode-icloud.helloWorld"
+		"onCommand:vscode-icloud.login"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "vscode-icloud.helloWorld",
-				"title": "Hello World"
+				"command": "vscode-icloud.login",
+				"title": "iCloud Login"
 			}
 		]
 	},
