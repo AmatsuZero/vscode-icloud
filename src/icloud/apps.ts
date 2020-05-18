@@ -204,7 +204,7 @@ export const iCloudApps = {
 			}
 		}
 	}
-}
+};
 
 export function getTopics(): string[] {
 	const topics: string[] = [];
@@ -214,6 +214,6 @@ export function getTopics(): string[] {
 				topics.push(v as string);
 			}
 		}
-	})
-	return topics
+	});
+	return topics;
 }

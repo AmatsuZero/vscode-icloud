@@ -35,9 +35,9 @@ export class iCloud extends EventEmitter {
 		this.isLoggedIn = this.session.auth.cookies.length > 0
 			&& this.session.auth.token !== null
 			&& Object.keys(this.session.push.account).length > 0
-			&& (userName.length > 0 ? this.userName === userName : true)
+			&& (userName.length > 0 ? this.userName === userName : true);
 		if (this.isLoggedIn && this.isCookieValid) { // If the session is valid, the client is ready! Emit the 'ready' event of the (self) instance
-			this.session.logins.push(new Date().getTime())
+			this.session.logins.push(new Date().getTime());
 			this.emit(iCloudState.ready);
 		} else {   // If not, the session is invalid: An error event occurs and username and password arguments will be used for logging in and creating a new session
 			try {

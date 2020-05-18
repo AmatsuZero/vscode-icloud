@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { resolve } from "path";
+import { join } from "path";
 import { iCloudState, iCloud } from './icloud';
 
 const icloud = new iCloud("");
@@ -45,11 +45,11 @@ icloud.on(iCloudState.error, async (errCode: number, msg: string) => {
 
 icloud.on(iCloudState.ready, () => {
 	vscode.window.showInformationMessage("会话建立成功");
-})
+});
 
 export function activate(context: vscode.ExtensionContext) {
 	let disposable = vscode.commands.registerCommand('vscode-icloud.login',  async () => {
-		await icloud.prepare("", resolve(`${context.globalStoragePath}`, 'session.json'));
+		await icloud.prepare("", join(`${context.globalStoragePath}`, 'session.json'));
 	});
 	context.subscriptions.push(disposable);
 }

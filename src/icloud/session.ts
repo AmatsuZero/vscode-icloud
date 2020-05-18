@@ -1,17 +1,17 @@
 import * as Cookie from "cookie";
 import { Agent } from "https";
 import fetch, { Response } from "node-fetch";
-import {iCloudApps, getTopics} from "./apps"
+import {iCloudApps, getTopics} from "./apps";
 import { URL } from 'url';
 
-declare type CookieType = { [key: string]: string }
+declare type CookieType = { [key: string]: string };
 
 declare type Authentication = {
 	token: string | null,
 	sessionID: string | null,
 	scnt: string | null,
 	response: any
-}
+};
 
 class iCloudAuth {
 	token: string | null = null;
@@ -37,7 +37,7 @@ class iCloudAuth {
 	get cookieString(): string {
 		return this.cookies
 		.map(cookie => Object.keys(cookie)[0] + '="' + cookie[Object.keys(cookie)[0]] + '"')
-		.join("; ")
+		.join("; ");
 	}
 
 	// Get list of cookies, represented to a boolean value whether the cookie is expired or no
@@ -57,14 +57,14 @@ class iCloudAuth {
 class iCloudPush {
 	topics: string[];
 	token: string | null = null;
-	ttl = 43200
-	courierUrl = ""
-	registered: string[] = []
+	ttl = 43200;
+	courierUrl = "";
+	registered: string[] = [];
 	account: any = {};
 	language = "en-us";
 	clientBuildNumber = "17DProject78";
 	clientMasteringNumber = "17D68";
-	private _clientID?: string
+	private _clientID?: string;
 
 	constructor() {
 		this.topics = getTopics();
@@ -76,12 +76,12 @@ class iCloudPush {
 		url.searchParams.append("ttl", this.ttl.toString());
 		const agent = new Agent({
 			rejectUnauthorized: false
-		})
+		});
 		return fetch(url, {
 			headers: this.defaultHeaders,
 			method: "get",
 			agent
-		})
+		});
 	}
 
 	private _createURLByPath(path: string): URL {
@@ -91,7 +91,7 @@ class iCloudPush {
 		url.searchParams.append("clientId", this.clientID);
 		url.searchParams.append("clientMasteringNumber", this.clientMasteringNumber);
 		url.searchParams.append("dsid", this.account["dsInfo"]["dsid"]);
-		return url
+		return url;
 	}
 
 	async getToken(cookiesStr: string): Promise<Response> {
@@ -109,7 +109,7 @@ class iCloudPush {
 			body,
 			method: "post",
 			headers: {...headers, ...this.defaultHeaders}
-		})
+		});
 	}
 
 	async registerTopics(cookieString: string): Promise<Response> {
@@ -122,12 +122,12 @@ class iCloudPush {
 		const headers = {
 			'Host': url.hostname,
 			'Cookie': cookieString,
-		}
+		};
 		return fetch(url, {
 			method: "post",
 			headers: {...this.defaultHeaders, ...headers},
 			body
-		})
+		});
 	}
 
 	async registerPush(service: string, cookieString: string): Promise<Response> {
@@ -141,12 +141,12 @@ class iCloudPush {
 		const headers = {
 			'Host': url.hostname,
 			'Cookie': cookieString,
-		}
+		};
 		return fetch(url, {
 			method: "post",
 			headers: {...this.defaultHeaders, ...headers},
 			body
-		})
+		});
 	}
 
 	async getStates(cookiesStr: string): Promise<Response> {
@@ -164,7 +164,7 @@ class iCloudPush {
 			method: "post",
 			headers: {...this.defaultHeaders, ...headers},
 			body
-		})
+		});
 	}
 
 	get pushServiceURL(): URL {
@@ -183,7 +183,7 @@ class iCloudPush {
 			'Cookie': '',
 			'X-Requested-With': "XMLHttpRequest",
 			'Accept-Language': this.language
-		}
+		};
 	}
 
 	get clientID(): string {
@@ -192,11 +192,11 @@ class iCloudPush {
 			const chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
 			this._clientID = structure
 				.map(part => {
-					let partStr = ""
+					let partStr = "";
 					for (let i = 0; i < part; i++) {
 						partStr += chars[Math.trunc(Math.random() * chars.length)]
 					}
-					return partStr
+					return partStr;
 				})
 				.join("-");
 		}
@@ -261,7 +261,7 @@ export default class iCloudSession {
 				'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.1 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.1',
 				'Origin': 'https://www.icloud.com'
 			}
-		})
+		});
 	}
 
 	async getAuthToken(userName: string, password: string): Promise<Authentication> {
@@ -305,7 +305,7 @@ export default class iCloudSession {
 			sessionID: response.headers.get("x-apple-id-session-id"),
 			scnt: response.headers.get("scnt"),
 			response: await response.json()
-		}
+		};
 	}
 
 	async enterSecurityCode(code: string) {
@@ -347,12 +347,12 @@ export default class iCloudSession {
 			'X-Apple-I-FD-Client-Info': JSON.stringify(this.clientSetting.xAppleIFDClientInfo),
 			'X-Apple-ID-Session-Id': this.clientSetting.xAppleIDSessionId !== null ? this.clientSetting.xAppleIDSessionId : "",
 			'scnt': this.clientSetting.scnt !== null ? this.clientSetting.scnt : ""
-		}
+		};
 		return fetch(url, {
 			method: "post",
 			headers: {...this.push.defaultHeaders, ...headers},
 			body: JSON.stringify(body)
-		})
+		});
 	}
 
 	private async trust() {
@@ -367,11 +367,11 @@ export default class iCloudSession {
 			'X-Apple-I-FD-Client-Info': JSON.stringify(this.clientSetting.xAppleIFDClientInfo),
 			'X-Apple-ID-Session-Id': this.clientSetting.xAppleIDSessionId !== null ? this.clientSetting.xAppleIDSessionId : "",
 			'scnt': this.clientSetting.scnt !== null ? this.clientSetting.scnt : ""
-		}
+		};
 		return fetch(url, {
 			method: "post",
 			headers: {...this.push.defaultHeaders, ...headers}
-		})
+		});
 	}
 
 	async update() {
