@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import * as fs from "fs";
 import { promisify } from "util";
 import iCloudSession from "./session";
+import Apps from "./apps"
 
 const readFileAsync = promisify(fs.readFile);
 
@@ -18,6 +19,7 @@ export class iCloud extends EventEmitter {
 	enablePush = false;
 	private session: iCloudSession;
 	private _sessionFile?: string;
+	applications?: Apps;
 
 	constructor(userName: string = "", password: string = "", session: iCloudSession | null = null) {
 		super();
@@ -74,6 +76,8 @@ export class iCloud extends EventEmitter {
 		this.password = password;
 		this.session.auth.createdDate = new Date();
 		this.session.logins.push(this.session.auth.createdDate.getTime());
+		// 创建 application 对象
+		this.applications = new Apps(this.session);
 		this.emit(iCloudState.ready);
 	}
 

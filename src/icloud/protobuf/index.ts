@@ -1,7 +1,7 @@
 import * as protobuf from "protobufjs";
-import { join, extname } from "path";
+import {join, extname} from "path";
 import * as fs from "fs";
-import {Root} from "protobufjs";
+import { Root } from "protobufjs";
 
 class ProtobufSupport {
     private _paths: string[] = [];
@@ -22,9 +22,9 @@ class ProtobufSupport {
         return this._protobufRoot;
     }
 
-    lookupType(type: string) {
-       const obj = this.protobufRoot.lookup(type);
-        
+    lookupType(type: string, data: Uint8Array) {
+        const obj = this.protobufRoot.lookupType(type);
+        return obj.decode(data);
     }
 }
 

@@ -1,8 +1,8 @@
 import * as Cookie from "cookie";
 import { Agent } from "https";
-import fetch, { Response } from "node-fetch";
-import {iCloudApps, getTopics} from "./apps";
 import { URL } from 'url';
+import fetch, { Response } from "node-fetch";
+import Apps from "./apps";
 
 declare type CookieType = { [key: string]: string };
 
@@ -65,9 +65,10 @@ class iCloudPush {
 	clientBuildNumber = "17DProject78";
 	clientMasteringNumber = "17D68";
 	private _clientID?: string;
+	private _pushServiceURL?: URL
 
 	constructor() {
-		this.topics = getTopics();
+		this.topics = Apps.getTopics();
 	}
 
 	async init() {
@@ -167,8 +168,12 @@ class iCloudPush {
 		});
 	}
 
-	get pushServiceURL(): URL {
-		return new URL(this.account["webservices"]["push"]["url"]);
+	get pushServiceURL(): URL | undefined {
+		if (this._pushServiceURL !== undefined) {
+			return this._pushServiceURL;
+		}
+		this._pushServiceURL =  new URL(this.account["webservices"]["push"]["url"]);
+		return this._pushServiceURL;
 	}
 
 	get defaultHeaders(): {} {
@@ -229,7 +234,6 @@ export default class iCloudSession {
 	private securityCode: string | null = null;
 	auth: iCloudAuth;
 	clientSetting: iCloudClientSetting;
-	apps = iCloudApps;
 	push: iCloudPush;
 	logins: number[] = [];
 	private baseURL = new URL("https://idmsa.apple.com");

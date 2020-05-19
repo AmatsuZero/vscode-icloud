@@ -1,4 +1,4 @@
-export const iCloudApps = {
+const iCloudApps = {
 	"contacts": {
 		"path": "contacts/",
 		"requiredServices": ["contacts", "keyvalue"],
@@ -206,14 +206,4 @@ export const iCloudApps = {
 	}
 };
 
-export function getTopics(): string[] {
-	const topics: string[] = [];
-	Object.values(iCloudApps).forEach(value => {
-		for (let [k, v] of Object.entries(value)) {
-			if (k === "pushTopic" && v !== null && v !== undefined) {
-				topics.push(v as string);
-			}
-		}
-	});
-	return topics;
-}
+export default iCloudApps;
