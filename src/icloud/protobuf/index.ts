@@ -1,5 +1,5 @@
 import * as protobuf from "protobufjs";
-import {join, extname} from "path";
+import { extname } from "path";
 import * as fs from "fs";
 import { Root } from "protobufjs";
 

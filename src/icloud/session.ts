@@ -13,6 +13,18 @@ declare type Authentication = {
 	response: any
 };
 
+export function newID(): string {
+	const structure = [8, 4, 4, 4, 12];
+	const chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
+	return structure.map(part => {
+		let partStr = "";
+		for (let i = 0; i < part; i++) {
+			partStr += chars[Math.trunc(Math.random() * chars.length)];
+		}
+		return partStr;
+	}).join("-");
+}
+
 class iCloudAuth {
 	token: string | null = null;
 	xAppleTwosvTrustToken: string | null = null;
@@ -50,7 +62,7 @@ class iCloudAuth {
 			} else {
 				return new Date(cookie.Expires).getTime() - timeStamp >= 0;
 			}
-		})
+		});
 	}
 }
 
@@ -193,17 +205,7 @@ class iCloudPush {
 
 	get clientID(): string {
 		if (this._clientID === undefined) {
-			const structure = [8, 4, 4, 4, 12];
-			const chars = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"];
-			this._clientID = structure
-				.map(part => {
-					let partStr = "";
-					for (let i = 0; i < part; i++) {
-						partStr += chars[Math.trunc(Math.random() * chars.length)]
-					}
-					return partStr;
-				})
-				.join("-");
+			this._clientID = newID();
 		}
 		return this._clientID;
 	}
